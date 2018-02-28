@@ -1,5 +1,10 @@
 import requests
+import time
 from bs4 import BeautifulSoup
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 class Product:
 
@@ -26,11 +31,11 @@ class Product:
         page = requests.get(category_url)
         page_data = page.text
 
-        soup2 = BeautifulSoup(page_data, 'html.parser')
+        soup = BeautifulSoup(page_data, 'html.parser')
 
         # gets array of a tags with the product name and an array of a tags with product color
-        items_of_same_name = soup2.find_all('a', string=self.name)
-        items_of_same_color = soup2.find_all('a', string=self.color)
+        items_of_same_name = soup.find_all('a', string=self.name)
+        items_of_same_color = soup.find_all('a', string=self.color)
 
         # runs all hrefs together to get a matching pair
         for product in items_of_same_name:
@@ -59,6 +64,28 @@ class SupremeBot:
         product = Product(initial_url, color)
 
         print(product.url)
+
+        # inits selenium chrome web driver
+        driver = webdriver.Chrome()
+
+        driver.get(product.url)
+        # makes assertion that driver opened right page
+        assert product.name in driver.title
+
+        # finds and clicks add ot cart button
+        add_to_cart_btn = driver.find_element_by_xpath("//input[@value='add to cart']")
+        add_to_cart_btn.click()
+
+        # waits until checkout is visible then clicks
+        try:
+            checkout_ready = WebDriverWait(driver, 10).until(
+                EC.visibility_of_element_located((By.CLASS_NAME, 'checkout'))
+            )
+        finally:
+            check_out_btn = driver.find_element_by_xpath("//a[@class='button checkout']")
+            check_out_btn.click()
+
+        time.sleep(5000)
 
     if __name__ == '__main__':
         main()
