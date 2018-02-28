@@ -70,7 +70,7 @@ class Product:
             check_out_btn = driver.find_element_by_xpath("//a[@class='button checkout']")
             check_out_btn.click()
 
-class SupremeBot:
+class CheckoutBot:
 
     def __init__(self):
         pass
@@ -107,18 +107,40 @@ class SupremeBot:
         country_input = Select(driver.find_element_by_id('order_billing_country'))
         country_input.select_by_value('USA')
 
+        card_input = driver.find_element_by_id('nnaerb')
+        card_input.clear()
+        card_input.send_keys('1234567812345678')
+
+        cvv_input = driver.find_element_by_id('orcer')
+        cvv_input.clear()
+        cvv_input.send_keys('123')
+
+        card_month_input = Select(driver.find_element_by_id('credit_card_month'))
+        card_month_input.select_by_value('01')
+
+        card_year_input = Select(driver.find_element_by_id('credit_card_year'))
+        card_year_input.select_by_value('2020')
+
         order_terms_input = driver.find_element_by_class_name('terms').find_element_by_class_name('iCheck-helper')
         order_terms_input.click()
+        
+    def click_payment_btn(self, driver):
+        submit_payment_btn = driver.find_element_by_id('pay').find_element_by_name('commit')
+        submit_payment_btn.click()
 
 def main():
     # initial testing values
     initial_url = 'http://www.supremenewyork.com/previews/springsummer2018/bags/backpack'
     color = 'Black'
 
+    # initial user input values
+    initial_url = input('Enter preview URL: ')
+    color = input('Enter color: ')
+
     # inits product object
     product = Product(initial_url, color)
     #init a supreme bot object
-    supreme_bot = SupremeBot()
+    checkout_bot = CheckoutBot()
 
     # inits selenium chrome web driver
     driver = webdriver.Chrome()
@@ -131,8 +153,12 @@ def main():
     product.add_product_to_cart(driver)
 
     # fills out checkout information
-    supreme_bot.fill_checkout_info(driver)
+    checkout_bot.fill_checkout_info(driver)
 
+    #clicks checkout button
+    checkout_bot.click_payment_btn(driver)
+
+    # gives user time to do captcha and finish checkout
     time.sleep(5000)
 
 if __name__ == '__main__':
