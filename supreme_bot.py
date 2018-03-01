@@ -57,6 +57,10 @@ class Product:
         self.url = self.set_product_url()
 
     def add_product_to_cart(self, driver):
+
+        if self.color == '':
+            time.sleep(5)
+
         # finds and clicks add ot cart button
         add_to_cart_btn = driver.find_element_by_xpath("//input[@value='add to cart']")
         add_to_cart_btn.click()
@@ -87,7 +91,7 @@ class CheckoutBot:
 
         phone_number_input = driver.find_element_by_id('order_tel')
         phone_number_input.clear()
-        phone_number_input.send_keys('206-444-4444')
+        phone_number_input.send_keys('206 444 4444')
 
         address_input = driver.find_element_by_id('bo')
         address_input.clear()
@@ -109,7 +113,7 @@ class CheckoutBot:
 
         card_input = driver.find_element_by_id('nnaerb')
         card_input.clear()
-        card_input.send_keys('1234567812345678')
+        card_input.send_keys('1234 5678 1234 5678')
 
         cvv_input = driver.find_element_by_id('orcer')
         cvv_input.clear()
@@ -130,33 +134,39 @@ class CheckoutBot:
 
 def main():
     # initial testing values
-    initial_url = 'http://www.supremenewyork.com/previews/springsummer2018/bags/backpack'
-    color = 'Black'
+    # URL - http://www.supremenewyork.com/previews/springsummer2018/bags/backpack
+    # Color - Black
 
     # initial user input values
     initial_url = input('Enter preview URL: ')
+    print('If you don\'t know the color leave blank, the bot will pause for 5 seconds to let you choose while it is running, if you want it to select the first possible color or for an accessory input anything')
     color = input('Enter color: ')
+    print('Do you want process payment to automatically be selected (can mess with captcha if automatic)')
+    auto_click_payment_btn = input('y/n: ')
+
+    # inits selenium chrome web driver
+    driver = webdriver.Chrome()
+    driver.get('http://www.supremenewyork.com')
 
     # inits product object
     product = Product(initial_url, color)
     #init a supreme bot object
     checkout_bot = CheckoutBot()
 
-    # inits selenium chrome web driver
-    driver = webdriver.Chrome()
-    # gets url and opens it
+    # gets product url and opens it
     driver.get(product.url)
-    # makes assertion that driver opened right page
     assert product.name in driver.title
 
     # adds product to cart
     product.add_product_to_cart(driver)
+    assert 'Supreme' in driver.title
 
     # fills out checkout information
     checkout_bot.fill_checkout_info(driver)
 
     #clicks checkout button
-    checkout_bot.click_payment_btn(driver)
+    if auto_click_payment_btn == 'y':
+        checkout_bot.click_payment_btn(driver)
 
     # gives user time to do captcha and finish checkout
     time.sleep(5000)
