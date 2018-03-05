@@ -48,17 +48,37 @@ class Product:
         # if not returns first product with the name
         return 'http://www.supremenewyork.com' + items_of_same_name[0]['href']
 
+    def set_item_cookie(self):
+        page = requests.get(self.url)
+        page_data = page.text
+        
+        soup = BeautifulSoup(page_data, 'html.parser')
+
+        cookie_val = soup.find('input', {'id': 'st'})['value']
+        return cookie_val
+
+    def set_size_cookie(self):
+        pass
+
     # inits all values of the product
-    def __init__(self, initial_url, color):
+    def __init__(self, initial_url, color, size):
         self.initial_url = initial_url
         self.color = color
+        self.size = size
         self.name = self.set_product_name()
         self.category = self.set_product_category()
         self.url = self.set_product_url()
+        self.item_cookie = self.set_item_cookie()
+        self.size_cookie = self.set_size_cookie()
 
-    def add_product_to_cart(self, driver):
+class CheckoutBot:
 
-        if self.color == '':
+    def __init__(self):
+        pass
+
+    # adds product to cart using selenium webdriver
+    def add_product_to_cart_using_driver(self, driver, product):
+        if product.color == '':
             time.sleep(5)
 
         # finds and clicks add ot cart button
@@ -74,10 +94,10 @@ class Product:
             check_out_btn = driver.find_element_by_xpath("//a[@class='button checkout']")
             check_out_btn.click()
 
-class CheckoutBot:
-
-    def __init__(self):
-        pass
+    # addsproduct to cart by injecting cookies
+    def add_product_to_cart_using_cookies(self, driver, product):
+        #cookie = {'cart' : '1+item--' + }
+        print(product.item_cookie)
 
     # locate each input and fill accordingly
     def fill_checkout_info(self, driver):
@@ -132,44 +152,75 @@ class CheckoutBot:
         submit_payment_btn = driver.find_element_by_id('pay').find_element_by_name('commit')
         submit_payment_btn.click()
 
+class User:
+
+    def __init__(self):
+        # initial testing values
+        # URL - http://www.supremenewyork.com/previews/springsummer2018/jackets/tiger-stripe-track-jacket-4
+        # Color - White
+
+        # initial user input values
+        self.initial_url = input('Enter preview URL: ')
+
+        print('Is the Item an accessory?')
+        if input('y/n: ') == 'y':
+            self.is_accessory = True
+        else:
+            self.is_accessory = False
+
+        if not self.is_accessory:
+            print('If you don\'t know the color leave blank, the bot will pause for 5 seconds to let you choose while it is running, if you want it to select the first possible color input any color')
+            self.color = input('Enter color: ')
+            self.size = input('Enter size: ')
+
+        print('Do you want to use cookies or a webdriver to add the item to your cart')
+        self.add_to_cart_method = input('cookies/webdriver: ')
+
+        print('Do you want process payment to automatically be selected (can mess with captcha if automatic)')
+        if input('y/n: ') == 'y':
+            self.auto_click_payment_btn = True
+        else:
+            self.auto_click_payment_btn = False
+
 def main():
-    # initial testing values
-    # URL - http://www.supremenewyork.com/previews/springsummer2018/bags/backpack
-    # Color - Black
+    quit = False
 
-    # initial user input values
-    initial_url = input('Enter preview URL: ')
-    print('If you don\'t know the color leave blank, the bot will pause for 5 seconds to let you choose while it is running, if you want it to select the first possible color or for an accessory input anything')
-    color = input('Enter color: ')
-    print('Do you want process payment to automatically be selected (can mess with captcha if automatic)')
-    auto_click_payment_btn = input('y/n: ')
+    while not quit:
+        # inits new user object
+        user = User()
 
-    # inits selenium chrome web driver
-    driver = webdriver.Chrome()
-    driver.get('http://www.supremenewyork.com')
+        # inits selenium chrome web driver
+        driver = webdriver.Chrome()
+        driver.get('http://www.supremenewyork.com')
 
-    # inits product object
-    product = Product(initial_url, color)
-    #init a supreme bot object
-    checkout_bot = CheckoutBot()
+        # inits product object
+        product = Product(user.initial_url, user.color, user.size)
+        # init a supreme bot object
+        checkout_bot = CheckoutBot()
 
-    # gets product url and opens it
-    driver.get(product.url)
-    assert product.name in driver.title
+        # gets product url and opens it
+        driver.get(product.url)
+        assert product.name in driver.title
 
-    # adds product to cart
-    product.add_product_to_cart(driver)
-    assert 'Supreme' in driver.title
+        if user.add_to_cart_method == 'cookies':
+            checkout_bot.add_product_to_cart_using_cookies(driver, product)
+            driver.get('https://www.supremenewyork.com/checkout')
+        elif user.add_to_cart_method == 'webdriver':
+            checkout_bot.add_product_to_cart_using_driver(driver, product)
+        else:
+            print('No add to cart method was found')
+            quit = True
 
-    # fills out checkout information
-    checkout_bot.fill_checkout_info(driver)
+        assert 'Supreme' in driver.title
+        # fills out checkout information
+        checkout_bot.fill_checkout_info(driver)
 
-    #clicks checkout button
-    if auto_click_payment_btn == 'y':
-        checkout_bot.click_payment_btn(driver)
+        #clicks checkout button
+        if user.auto_click_payment_btn:
+            checkout_bot.click_payment_btn(driver)
 
-    # gives user time to do captcha and finish checkout
-    time.sleep(5000)
+        # gives user time to do captcha and finish checkout
+        time.sleep(5000)
 
 if __name__ == '__main__':
     main()
