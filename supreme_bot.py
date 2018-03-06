@@ -58,7 +58,13 @@ class Product:
         return cookie_val
 
     def set_size_cookie(self):
-        pass
+        page = requests.get(self.url)
+        page_data = page.text
+        
+        soup = BeautifulSoup(page_data, 'html.parser')
+
+        cookie_val = soup.find('select', {'id': 's'}).find('option', text=self.size)['value']
+        return cookie_val
 
     # inits all values of the product
     def __init__(self, initial_url, color, size):
@@ -75,6 +81,11 @@ class CheckoutBot:
 
     def __init__(self):
         pass
+
+    # sets size for item
+    def select_product_size(self, driver, product):
+        size_input = Select(driver.find_element_by_id('s'))
+        size_input.select_by_value(product.size_cookie)
 
     # adds product to cart using selenium webdriver
     def add_product_to_cart_using_driver(self, driver, product):
@@ -93,11 +104,6 @@ class CheckoutBot:
         finally:
             check_out_btn = driver.find_element_by_xpath("//a[@class='button checkout']")
             check_out_btn.click()
-
-    # addsproduct to cart by injecting cookies
-    def add_product_to_cart_using_cookies(self, driver, product):
-        #cookie = {'cart' : '1+item--' + }
-        print(product.item_cookie)
 
     # locate each input and fill accordingly
     def fill_checkout_info(self, driver):
@@ -168,13 +174,13 @@ class User:
         else:
             self.is_accessory = False
 
-        if not self.is_accessory:
-            print('If you don\'t know the color leave blank, the bot will pause for 5 seconds to let you choose while it is running, if you want it to select the first possible color input any color')
-            self.color = input('Enter color: ')
+        if self.is_accessory:
+            self.size = ''
+        else:
             self.size = input('Enter size: ')
 
-        print('Do you want to use cookies or a webdriver to add the item to your cart')
-        self.add_to_cart_method = input('cookies/webdriver: ')
+        print('If you don\'t know the color leave blank, the bot will pause for 5 seconds to let you choose while it is running, if you want it to select the first possible color or the item doesn\'t have a color input any color')
+        self.color = input('Enter color: ')
 
         print('Do you want process payment to automatically be selected (can mess with captcha if automatic)')
         if input('y/n: ') == 'y':
@@ -200,22 +206,20 @@ def main():
 
         # gets product url and opens it
         driver.get(product.url)
+
         assert product.name in driver.title
 
-        if user.add_to_cart_method == 'cookies':
-            checkout_bot.add_product_to_cart_using_cookies(driver, product)
-            driver.get('https://www.supremenewyork.com/checkout')
-        elif user.add_to_cart_method == 'webdriver':
-            checkout_bot.add_product_to_cart_using_driver(driver, product)
-        else:
-            print('No add to cart method was found')
-            quit = True
+        if not user.is_accessory:
+            checkout_bot.select_product_size(driver, product)
+
+        checkout_bot.add_product_to_cart_using_driver(driver, product)
 
         assert 'Supreme' in driver.title
+
         # fills out checkout information
         checkout_bot.fill_checkout_info(driver)
 
-        #clicks checkout button
+        # clicks checkout button
         if user.auto_click_payment_btn:
             checkout_bot.click_payment_btn(driver)
 
