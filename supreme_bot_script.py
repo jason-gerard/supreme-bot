@@ -1,6 +1,5 @@
 import requests
 import time
-import re
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
