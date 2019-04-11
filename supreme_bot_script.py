@@ -8,27 +8,45 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select
 
+# local username on computer for chrome data
+local_username = 'jason'
+
+# product details
+preview_url = 'https://www.supremenewyork.com/previews/springsummer2019/sweatshirts/chain-logo-crewneck'
+# XLarge, Large, Medium, Small
+size = 'Large'
+color = 'black'.capitalize()
+
+# billing info
+name = 'John Doe'
+email = 'john@doe.com'
+tel_num = '206 444 4444'
+address = '400 Broad St'
+zip_code = '98101'
+city = 'Seattle'
+state = 'WA'
+country = 'USA'
+card_num = '1234 5678 1234 5678'
+cvv = '123'
+exp_month = '01'
+exp_year = '2021'
+
 
 def main():
 
-    preview_url = input('Enter preview URL: ')
-
-    print('Leave blank if none')
-    size = input('Enter size: ')
-
-    print('Leave blank for no color')
-    color = input('Enter color: ')
-
     # inits selenium chrome web driver
-    driver = webdriver.Chrome()
+    options = webdriver.ChromeOptions()
+    options.add_argument(
+        f"--user-data-dir=C:/Users/{local_username}/AppData/Local/Google/Chrome/User Data")
+    driver = webdriver.Chrome(options=options)
     driver.get('http://www.supremenewyork.com')
 
     # gets all info for product
-    product_name = get_product_name(preview_url)
-    product_category = get_product_category(preview_url)
-    product_url = get_product_url(product_category, product_name, color)
+    product_name = get_product_name()
+    product_category = get_product_category()
+    product_url = get_product_url(product_category, product_name)
     if not size == '':
-        size_cookie = get_size_cookie(product_url, size)
+        size_cookie = get_size_cookie(product_url)
 
     # opens product page
     driver.get(product_url)
@@ -38,7 +56,7 @@ def main():
     # fills out all entered product and billing info
     if not size == '':
         select_product_size(driver, size_cookie)
-    add_product_to_cart(driver, color)
+    add_product_to_cart(driver)
     fill_checkout_info(driver)
     click_payment_btn(driver)
 
@@ -46,9 +64,9 @@ def main():
     time.sleep(5000)
 
 
-def get_product_name(initial_url):
+def get_product_name():
     # grabs preview page url and gets text from it
-    page = requests.get(initial_url)
+    page = requests.get(preview_url)
     page_data = page.text
 
     soup = BeautifulSoup(page_data, 'html.parser')
@@ -57,12 +75,14 @@ def get_product_name(initial_url):
     return str(soup.find('div', class_='description').div.h2.text)
 
 
-def get_product_category(initial_url):
+def get_product_category():
     # splits string by 5th slash which will always output correct category
-    return str(initial_url.split('/')[5]).replace('-', '_')
+    return str(preview_url.split('/')[5]).replace('-', '_')
 
 
-def get_product_url(category, name, color):
+def get_product_url(category, name):
+    global color
+
     category_url = 'http://www.supremenewyork.com/shop/all/' + \
         str(category)
 
@@ -87,7 +107,7 @@ def get_product_url(category, name, color):
     return 'http://www.supremenewyork.com' + items_of_same_name[0]['href']
 
 
-def get_size_cookie(url, size):
+def get_size_cookie(url):
     page = requests.get(url)
     page_data = page.text
 
@@ -103,9 +123,7 @@ def select_product_size(driver, size_cookie):
     size_input.select_by_value(size_cookie)
 
 
-def add_product_to_cart(driver, color):
-    if color == '':
-        time.sleep(5)
+def add_product_to_cart(driver):
 
     # finds and clicks add ot cart button
     add_to_cart_btn = driver.find_element_by_xpath(
@@ -126,49 +144,49 @@ def add_product_to_cart(driver, color):
 def fill_checkout_info(driver):
     name_input = driver.find_element_by_id('order_billing_name')
     name_input.clear()
-    name_input.send_keys('John Doe')
+    name_input.send_keys(name)
 
     email_input = driver.find_element_by_id('order_email')
     email_input.clear()
-    email_input.send_keys('john@doe.com')
+    email_input.send_keys(email)
 
     phone_number_input = driver.find_element_by_id('order_tel')
     phone_number_input.clear()
-    phone_number_input.send_keys('206 444 4444')
+    phone_number_input.send_keys(tel_num)
 
     address_input = driver.find_element_by_id('bo')
     address_input.clear()
-    address_input.send_keys('400 Broad St')
+    address_input.send_keys(address)
 
     zip_code_input = driver.find_element_by_id('order_billing_zip')
     zip_code_input.clear()
-    zip_code_input.send_keys('98101')
+    zip_code_input.send_keys(zip_code)
 
     city_input = driver.find_element_by_id('order_billing_city')
     city_input.clear()
-    city_input.send_keys('Seattle')
+    city_input.send_keys(city)
 
     state_input = Select(driver.find_element_by_id('order_billing_state'))
-    state_input.select_by_value('WA')
+    state_input.select_by_value(state)
 
     country_input = Select(
         driver.find_element_by_id('order_billing_country'))
-    country_input.select_by_value('USA')
+    country_input.select_by_value(country)
 
     card_input = driver.find_element_by_id('nnaerb')
     card_input.clear()
-    card_input.send_keys('1234 5678 1234 5678')
+    card_input.send_keys(card_num)
 
     cvv_input = driver.find_element_by_id('orcer')
     cvv_input.clear()
-    cvv_input.send_keys('123')
+    cvv_input.send_keys(cvv)
 
     card_month_input = Select(
         driver.find_element_by_id('credit_card_month'))
-    card_month_input.select_by_value('01')
+    card_month_input.select_by_value(exp_month)
 
     card_year_input = Select(driver.find_element_by_id('credit_card_year'))
-    card_year_input.select_by_value('2020')
+    card_year_input.select_by_value(exp_year)
 
     order_terms_input = driver.find_element_by_class_name(
         'terms').find_element_by_class_name('iCheck-helper')

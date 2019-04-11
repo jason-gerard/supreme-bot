@@ -8,6 +8,10 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select
 
+# This is legacy and I will be removing it soon
+# please don't run this file, run the updated supreme_bot_script.py file
+
+
 class Product:
 
     # sets product name
@@ -18,7 +22,7 @@ class Product:
 
         soup = BeautifulSoup(page_data, 'html.parser')
 
-        #sets the product name equal to the information from preview page
+        # sets the product name equal to the information from preview page
         return str(soup.find('div', class_='description').div.h2.text)
 
     # sets product category for use in the product url
@@ -28,7 +32,8 @@ class Product:
 
     # sets produt url
     def set_product_url(self):
-        category_url = 'http://www.supremenewyork.com/shop/all/' + str(self.category)
+        category_url = 'http://www.supremenewyork.com/shop/all/' + \
+            str(self.category)
 
         page = requests.get(category_url)
         page_data = page.text
@@ -51,7 +56,7 @@ class Product:
     def set_item_cookie(self):
         page = requests.get(self.url)
         page_data = page.text
-        
+
         soup = BeautifulSoup(page_data, 'html.parser')
 
         cookie_val = soup.find('input', {'id': 'st'})['value']
@@ -60,10 +65,11 @@ class Product:
     def set_size_cookie(self):
         page = requests.get(self.url)
         page_data = page.text
-        
+
         soup = BeautifulSoup(page_data, 'html.parser')
 
-        cookie_val = soup.find('select', {'id': 's'}).find('option', text=self.size)['value']
+        cookie_val = soup.find('select', {'id': 's'}).find(
+            'option', text=self.size)['value']
         return cookie_val
 
     # inits all values of the product
@@ -76,6 +82,7 @@ class Product:
         self.url = self.set_product_url()
         self.item_cookie = self.set_item_cookie()
         self.size_cookie = self.set_size_cookie()
+
 
 class CheckoutBot:
 
@@ -93,7 +100,8 @@ class CheckoutBot:
             time.sleep(5)
 
         # finds and clicks add ot cart button
-        add_to_cart_btn = driver.find_element_by_xpath("//input[@value='add to cart']")
+        add_to_cart_btn = driver.find_element_by_xpath(
+            "//input[@value='add to cart']")
         add_to_cart_btn.click()
 
         # waits until checkout is visible then clicks
@@ -102,7 +110,8 @@ class CheckoutBot:
                 EC.visibility_of_element_located((By.CLASS_NAME, 'checkout'))
             )
         finally:
-            check_out_btn = driver.find_element_by_xpath("//a[@class='button checkout']")
+            check_out_btn = driver.find_element_by_xpath(
+                "//a[@class='button checkout']")
             check_out_btn.click()
 
     # locate each input and fill accordingly
@@ -134,7 +143,8 @@ class CheckoutBot:
         state_input = Select(driver.find_element_by_id('order_billing_state'))
         state_input.select_by_value('WA')
 
-        country_input = Select(driver.find_element_by_id('order_billing_country'))
+        country_input = Select(
+            driver.find_element_by_id('order_billing_country'))
         country_input.select_by_value('USA')
 
         card_input = driver.find_element_by_id('nnaerb')
@@ -145,18 +155,22 @@ class CheckoutBot:
         cvv_input.clear()
         cvv_input.send_keys('123')
 
-        card_month_input = Select(driver.find_element_by_id('credit_card_month'))
+        card_month_input = Select(
+            driver.find_element_by_id('credit_card_month'))
         card_month_input.select_by_value('01')
 
         card_year_input = Select(driver.find_element_by_id('credit_card_year'))
         card_year_input.select_by_value('2020')
 
-        order_terms_input = driver.find_element_by_class_name('terms').find_element_by_class_name('iCheck-helper')
+        order_terms_input = driver.find_element_by_class_name(
+            'terms').find_element_by_class_name('iCheck-helper')
         order_terms_input.click()
-        
+
     def click_payment_btn(self, driver):
-        submit_payment_btn = driver.find_element_by_id('pay').find_element_by_name('commit')
+        submit_payment_btn = driver.find_element_by_id(
+            'pay').find_element_by_name('commit')
         submit_payment_btn.click()
+
 
 class User:
 
@@ -187,6 +201,7 @@ class User:
             self.auto_click_payment_btn = True
         else:
             self.auto_click_payment_btn = False
+
 
 def main():
     quit = False
@@ -225,6 +240,7 @@ def main():
 
         # gives user time to do captcha and finish checkout
         time.sleep(5000)
+
 
 if __name__ == '__main__':
     main()
