@@ -61,7 +61,7 @@ def main():
     click_payment_btn(driver)
 
     # gives user time to do captcha and finish checkout
-    time.sleep(5000)
+    time.sleep(9999)
 
 
 def get_product_name():
